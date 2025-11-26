@@ -101,6 +101,65 @@ function processCSV(csvContent) {
     }
 }
 
+// Run all sorting algorithms
+async function runAllAlgorithms() {
+    const fileInput = document.getElementById("csvFile");
+    const columnSelect = document.getElementById("columnDropdown");
+    const button = document.getElementById("sortButton");
+    const resultsDiv = document.getElementById("results");
+
+    if (!fileInput.files.length) {
+        alert("Please select a CSV file!");
+        return;
+    }
+
+    const selectedColumn = columnSelect.value;
+    if (!selectedColumn) {
+        alert("Please select a numeric column to sort!");
+        return;
+    }
+
+    // Show loading state
+    button.disabled = true;
+    button.textContent = "Sorting...";
+    resultsDiv.innerHTML = '<div class="loading">🔄 Sorting in progress... Please wait</div>';
+
+    try {
+        const file = fileInput.files[0];
+        const csvText = await readFileAsText(file);
+
+        console.log("Sending request for column:", selectedColumn);
+
+        const response = await fetch("http://localhost:8080/sort", {
+            method: "POST",
+            headers: {
+                "Content-Type": "text/plain"
+            },
+            body: csvText + "###" + selectedColumn
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server error (${response.status}): ${errorText}`);
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        console.log("Received data:", data);
+        displayResults(data);
+
+    } catch (error) {
+        console.error("Error:", error);
+        resultsDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+    } finally {
+        button.disabled = false;
+        button.textContent = "Run All Sorting Algorithms";
+    }
+}
 
 function readFileAsText(file) {
     return new Promise((resolve, reject) => {
@@ -109,4 +168,45 @@ function readFileAsText(file) {
         reader.onerror = e => reject(new Error("Failed to read file"));
         reader.readAsText(file);
     });
+}
+
+function displayResults(data) {
+    const resultsDiv = document.getElementById("results");
+    const executionTimes = data.executionTimes;
+
+    let tableHTML = `
+        <h2>Sorting Algorithm Performance Results</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Algorithm</th>
+                    <th>Execution Time (ms)</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    // Add rows for each algorithm
+    Object.entries(executionTimes).forEach(([algorithm, time]) => {
+        const isBest = algorithm === data.bestAlgorithm;
+        const rowStyle = isBest ? 'style="background-color: #d4edda; font-weight: bold;"' : '';
+
+        tableHTML += `
+            <tr ${rowStyle}>
+                <td>${algorithm}</td>
+                <td>${time} ms</td>
+            </tr>
+        `;
+    });
+
+    tableHTML += `
+            </tbody>
+        </table>
+        <div class="success">
+            <h3>🏆 Best Performing Algorithm: ${data.bestAlgorithm}</h3>
+            <p>Execution Time: ${data.bestTime} milliseconds</p>
+        </div>
+    `;
+
+    resultsDiv.innerHTML = tableHTML;
 }
