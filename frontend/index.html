@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sorting Algorithm Performance Analyzer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <h1>Sorting Algorithm Performance Analyzer</h1>
+
+    <div class="form-group">
+        <label for="csvFile">Upload CSV File:</label>
+        <input type="file" id="csvFile" accept=".csv">
+        <small style="color: #666;">Make sure your CSV has a header row and numeric columns</small>
+    </div>
+
+    <div class="form-group">
+        <label for="columnDropdown">Select Numeric Column to Sort:</label>
+        <select id="columnDropdown">
+            <option value="">-- Select a column --</option>
+        </select>
+    </div>
+
+    <button onclick="runAllAlgorithms()" id="sortButton">Run All Sorting Algorithms</button>
+
+    <div id="results"></div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
