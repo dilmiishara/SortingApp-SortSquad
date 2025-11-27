@@ -7,7 +7,7 @@ public class SortServer {
     public static void main(String[] args) {
         try {
             ServerSocket server = new ServerSocket(8080);
-            System.out.println("CSV Server running on http://localhost:8080");
+            System.out.println("Server running on http://localhost:8080");
 
             while (true) {
                 Socket socket = server.accept();
@@ -27,6 +27,12 @@ public class SortServer {
             String requestLine = in.readLine();
             if (requestLine == null) return;
 
+            // Handle CORS preflight requests
+            if (requestLine.startsWith("OPTIONS")) {
+                sendCORSResponse(out);
+                return;
+            }
+
             int contentLength = 0;
             String header;
             while ((header = in.readLine()) != null && !header.isEmpty()) {
@@ -35,15 +41,19 @@ public class SortServer {
                 }
             }
 
-            // Read body
             char[] bodyChars = new char[contentLength];
             in.read(bodyChars);
             String body = new String(bodyChars);
 
+            // -------- ROUTES ---------
             if (requestLine.startsWith("POST /csv")) {
                 handleCSVRequest(body, out);
+
+            } else if (requestLine.startsWith("POST /sort")) {
+                handleSortRequest(body, out);
+
             } else {
-                out.write("HTTP/1.1 200 OK\r\n\r\nCSV Server Running".getBytes());
+                out.write("HTTP/1.1 200 OK\r\n\r\nSort Server Running".getBytes());
             }
 
             out.close();
@@ -54,6 +64,8 @@ public class SortServer {
             e.printStackTrace();
         }
     }
+
+    // ================= CSV HANDLING ==================
 
     private static void handleCSVRequest(String body, OutputStream out) throws Exception {
 
@@ -81,10 +93,8 @@ public class SortServer {
             return;
         }
 
-        // Extract numeric column
         List<Double> numericValues = extractNumericColumn(rows, colIndex);
 
-        // Build JSON manually
         String json = "{ \"values\": " + numericValues.toString() + " }";
 
         String response = "HTTP/1.1 200 OK\r\n" +
@@ -95,8 +105,6 @@ public class SortServer {
 
         out.write(response.getBytes());
     }
-
-    // ---- CSV FUNCTIONS ----
 
     public static List<String[]> parseCSV(String csv) {
         List<String[]> rows = new ArrayList<>();
@@ -125,6 +133,61 @@ public class SortServer {
         return values;
     }
 
+    // ================= SORT REQUEST HANDLING ==================
+
+    private static void handleSortRequest(String body, OutputStream out) throws Exception {
+
+        /*
+            Expected format:
+            SORTTYPE ### COLUMN_INDEX ### [values]
+        */
+
+        String[] parts = body.split("###");
+        if (parts.length < 3) {
+            sendError(out, "Invalid sort request format.");
+            return;
+        }
+
+        String sortType = parts[0].trim();
+        String colIndexStr = parts[1].trim();
+        String valuesStr = parts[2].trim();
+
+        int colIndex;
+        try {
+            colIndex = Integer.parseInt(colIndexStr);
+        } catch (Exception e) {
+            sendError(out, "Column index must be a number");
+            return;
+        }
+
+        // Convert string list to numbers
+        valuesStr = valuesStr.replace("[", "").replace("]", "");
+        List<Double> values = new ArrayList<>();
+
+        for (String s : valuesStr.split(",")) {
+            try {
+                values.add(Double.parseDouble(s.trim()));
+            } catch (Exception ignored) {}
+        }
+
+        // --- Sorting logic will be added later ---
+        // For now just echo back
+        String json = "{ \"sortType\": \"" + sortType + "\", "
+                + "\"column\": " + colIndex + ", "
+                + "\"valuesReceived\": " + values.toString() + " }";
+
+        String response = "HTTP/1.1 200 OK\r\n" +
+                "Content-Type: application/json\r\n" +
+                "Access-Control-Allow-Origin: *\r\n" +
+                "Content-Length: " + json.length() + "\r\n\r\n" +
+                json;
+
+        out.write(response.getBytes());
+    }
+
+
+    // ================== HELPERS ===================
+
     private static void sendError(OutputStream out, String msg) throws IOException {
         String json = "{ \"error\": \"" + msg + "\" }";
         String response = "HTTP/1.1 400 Bad Request\r\n" +
@@ -132,6 +195,16 @@ public class SortServer {
                 "Access-Control-Allow-Origin: *\r\n" +
                 "Content-Length: " + json.length() + "\r\n\r\n" +
                 json;
+
+        out.write(response.getBytes());
+    }
+
+    private static void sendCORSResponse(OutputStream out) throws IOException {
+        String response =
+                "HTTP/1.1 204 No Content\r\n" +
+                        "Access-Control-Allow-Origin: *\r\n" +
+                        "Access-Control-Allow-Methods: POST, GET, OPTIONS\r\n" +
+                        "Access-Control-Allow-Headers: Content-Type\r\n\r\n";
 
         out.write(response.getBytes());
     }
