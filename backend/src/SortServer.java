@@ -27,7 +27,6 @@ public class SortServer {
             String requestLine = in.readLine();
             if (requestLine == null) return;
 
-            // Handle CORS preflight requests
             if (requestLine.startsWith("OPTIONS")) {
                 sendCORSResponse(out);
                 return;
@@ -45,7 +44,6 @@ public class SortServer {
             in.read(bodyChars);
             String body = new String(bodyChars);
 
-            // -------- ROUTES ---------
             if (requestLine.startsWith("POST /csv")) {
                 handleCSVRequest(body, out);
 
@@ -69,7 +67,6 @@ public class SortServer {
 
     private static void handleCSVRequest(String body, OutputStream out) throws Exception {
 
-        // Format: CSV_DATA ### COLUMN_INDEX
         String[] parts = body.split("###");
         if (parts.length < 2) {
             sendError(out, "Invalid format. Expected: CSV###COLUMN_INDEX");
@@ -120,7 +117,7 @@ public class SortServer {
     public static List<Double> extractNumericColumn(List<String[]> rows, int colIndex) {
         List<Double> values = new ArrayList<>();
 
-        for (int i = 1; i < rows.size(); i++) { // skip header
+        for (int i = 1; i < rows.size(); i++) {
             String[] row = rows.get(i);
 
             if (colIndex < row.length) {
@@ -137,18 +134,13 @@ public class SortServer {
 
     private static void handleSortRequest(String body, OutputStream out) throws Exception {
 
-        /*
-            Expected format:
-            SORTTYPE ### COLUMN_INDEX ### [values]
-        */
-
         String[] parts = body.split("###");
         if (parts.length < 3) {
             sendError(out, "Invalid sort request format.");
             return;
         }
 
-        String sortType = parts[0].trim();
+        String sortType = parts[0].trim().toLowerCase();
         String colIndexStr = parts[1].trim();
         String valuesStr = parts[2].trim();
 
@@ -160,21 +152,35 @@ public class SortServer {
             return;
         }
 
-        // Convert string list to numbers
         valuesStr = valuesStr.replace("[", "").replace("]", "");
         List<Double> values = new ArrayList<>();
 
         for (String s : valuesStr.split(",")) {
             try {
                 values.add(Double.parseDouble(s.trim()));
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) { }
         }
 
-        // --- Sorting logic will be added later ---
-        // For now just echo back
+        // Convert List<Double> → array for sorting
+        double[] arr = new double[values.size()];
+        for (int i = 0; i < values.size(); i++) arr[i] = values.get(i);
+
+        // ===== Apply Heap Sort =====
+        long start = System.nanoTime();
+        if (sortType.equals("heap")) {
+            heapSort(arr);
+        }
+        long end = System.nanoTime();
+
+        // Convert back to list
+        List<Double> sorted = new ArrayList<>();
+        for (double v : arr) sorted.add(v);
+
+        long timeTaken = end - start;
+
         String json = "{ \"sortType\": \"" + sortType + "\", "
-                + "\"column\": " + colIndex + ", "
-                + "\"valuesReceived\": " + values.toString() + " }";
+                + "\"time\": " + timeTaken + ", "
+                + "\"sortedValues\": " + sorted.toString() + " }";
 
         String response = "HTTP/1.1 200 OK\r\n" +
                 "Content-Type: application/json\r\n" +
@@ -185,8 +191,46 @@ public class SortServer {
         out.write(response.getBytes());
     }
 
+    // ================= HEAP SORT ==================
 
-    // ================== HELPERS ===================
+    public static void heapSort(double[] arr) {
+        int n = arr.length;
+
+        // Build max heap
+        for (int i = n / 2 - 1; i >= 0; i--)
+            heapify(arr, n, i);
+
+        // Extract elements
+        for (int i = n - 1; i >= 0; i--) {
+            double temp = arr[0];
+            arr[0] = arr[i];
+            arr[i] = temp;
+
+            heapify(arr, i, 0);
+        }
+    }
+
+    private static void heapify(double[] arr, int n, int i) {
+        int largest = i;
+        int left = 2 * i + 1;
+        int right = 2 * i + 2;
+
+        if (left < n && arr[left] > arr[largest])
+            largest = left;
+
+        if (right < n && arr[right] > arr[largest])
+            largest = right;
+
+        if (largest != i) {
+            double swap = arr[i];
+            arr[i] = arr[largest];
+            arr[largest] = swap;
+
+            heapify(arr, n, largest);
+        }
+    }
+
+    // ================== HELPERS ====================
 
     private static void sendError(OutputStream out, String msg) throws IOException {
         String json = "{ \"error\": \"" + msg + "\" }";
