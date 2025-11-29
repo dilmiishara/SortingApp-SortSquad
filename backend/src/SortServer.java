@@ -230,7 +230,7 @@ public class SortServer {
         }
     }
 
-    // ================== HELPERS ===================
+    // ================== HELPERS ====================
 
     private static void sendError(OutputStream out, String msg) throws IOException {
         String json = "{ \"error\": \"" + msg + "\" }";
