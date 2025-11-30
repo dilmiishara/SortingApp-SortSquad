@@ -176,6 +176,9 @@ public class SortServer {
         else if (sortType.equals("merge")) {
             mergeSort(arr);
         }
+        else if (sortType.equals("shell")) {
+            shellSort(arr);
+        }
 
         long end = System.nanoTime();
         long timeTaken = end - start;
@@ -295,6 +298,28 @@ public class SortServer {
         }
 
         while (i <= mid) arr[k++] = temp[i++];
+    }
+
+    // ================= SHELL SORT ==================
+
+    public static void shellSort(double[] arr) {
+        int n = arr.length;
+
+        for (int gap = n / 2; gap > 0; gap /= 2) {
+
+            for (int i = gap; i < n; i++) {
+
+                double temp = arr[i];
+                int j = i;
+
+                while (j >= gap && arr[j - gap] > temp) {
+                    arr[j] = arr[j - gap];
+                    j -= gap;
+                }
+
+                arr[j] = temp;
+            }
+        }
     }
 
     // ================== HELPERS ====================
