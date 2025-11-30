@@ -173,6 +173,9 @@ public class SortServer {
         else if (sortType.equals("quick")) {
             quickSort(arr, 0, arr.length - 1);
         }
+        else if (sortType.equals("merge")) {
+            mergeSort(arr);
+        }
 
         long end = System.nanoTime();
         long timeTaken = end - start;
@@ -260,6 +263,38 @@ public class SortServer {
         arr[high] = temp;
 
         return i + 1;
+    }
+
+    // ================= MERGE SORT ==================
+
+    public static void mergeSort(double[] arr) {
+        double[] temp = new double[arr.length];
+        mergeSortHelper(arr, temp, 0, arr.length - 1);
+    }
+
+    private static void mergeSortHelper(double[] arr, double[] temp, int left, int right) {
+        if (left >= right) return;
+
+        int mid = (left + right) / 2;
+
+        mergeSortHelper(arr, temp, left, mid);
+        mergeSortHelper(arr, temp, mid + 1, right);
+
+        System.arraycopy(arr, left, temp, left, right - left + 1);
+
+        int i = left;
+        int j = mid + 1;
+        int k = left;
+
+        while (i <= mid && j <= right) {
+            if (temp[i] <= temp[j]) {
+                arr[k++] = temp[i++];
+            } else {
+                arr[k++] = temp[j++];
+            }
+        }
+
+        while (i <= mid) arr[k++] = temp[i++];
     }
 
     // ================== HELPERS ====================
