@@ -161,22 +161,24 @@ public class SortServer {
             } catch (Exception ignored) { }
         }
 
-        // Convert List<Double> → array for sorting
         double[] arr = new double[values.size()];
         for (int i = 0; i < values.size(); i++) arr[i] = values.get(i);
 
-        // ===== Apply Heap Sort =====
         long start = System.nanoTime();
+
+        // ================= APPLY SORTS =================
         if (sortType.equals("heap")) {
             heapSort(arr);
         }
-        long end = System.nanoTime();
+        else if (sortType.equals("quick")) {
+            quickSort(arr, 0, arr.length - 1);
+        }
 
-        // Convert back to list
+        long end = System.nanoTime();
+        long timeTaken = end - start;
+
         List<Double> sorted = new ArrayList<>();
         for (double v : arr) sorted.add(v);
-
-        long timeTaken = end - start;
 
         String json = "{ \"sortType\": \"" + sortType + "\", "
                 + "\"time\": " + timeTaken + ", "
@@ -196,11 +198,9 @@ public class SortServer {
     public static void heapSort(double[] arr) {
         int n = arr.length;
 
-        // Build max heap
         for (int i = n / 2 - 1; i >= 0; i--)
             heapify(arr, n, i);
 
-        // Extract elements
         for (int i = n - 1; i >= 0; i--) {
             double temp = arr[0];
             arr[0] = arr[i];
@@ -228,6 +228,38 @@ public class SortServer {
 
             heapify(arr, n, largest);
         }
+    }
+
+    // ================= QUICK SORT ==================
+
+    public static void quickSort(double[] arr, int low, int high) {
+        if (low < high) {
+            int pi = partition(arr, low, high);
+
+            quickSort(arr, low, pi - 1);
+            quickSort(arr, pi + 1, high);
+        }
+    }
+
+    private static int partition(double[] arr, int low, int high) {
+        double pivot = arr[high];
+        int i = low - 1;
+
+        for (int j = low; j < high; j++) {
+            if (arr[j] <= pivot) {
+                i++;
+
+                double temp = arr[i];
+                arr[i] = arr[j];
+                arr[j] = temp;
+            }
+        }
+
+        double temp = arr[i + 1];
+        arr[i + 1] = arr[high];
+        arr[high] = temp;
+
+        return i + 1;
     }
 
     // ================== HELPERS ====================
