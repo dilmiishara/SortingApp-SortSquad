@@ -179,6 +179,9 @@ public class SortServer {
         else if (sortType.equals("shell")) {
             shellSort(arr);
         }
+        else if (sortType.equals("insertion")) {
+            insertionSort(arr);
+        }
 
         long end = System.nanoTime();
         long timeTaken = end - start;
@@ -319,6 +322,22 @@ public class SortServer {
 
                 arr[j] = temp;
             }
+        }
+    }
+
+    // ================= INSERTION SORT ==================
+
+    public static void insertionSort(double[] arr) {
+        for (int i = 1; i < arr.length; i++) {
+            double key = arr[i];
+            int j = i - 1;
+
+            while (j >= 0 && arr[j] > key) {
+                arr[j + 1] = arr[j];
+                j--;
+            }
+
+            arr[j + 1] = key;
         }
     }
 
