@@ -1,29 +1,98 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sorting Algorithm Performance Analyzer</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-<div class="container">
-    <h1>Sorting Algorithm Performance Analyzer</h1>
+<div class="app-container">
+    <header class="app-header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-analytics"></i>
+                <h1>Sorting Algorithm Analyzer</h1>
+            </div>
+            <p class="subtitle">Compare performance metrics across multiple sorting algorithms with your data</p>
+        </div>
+    </header>
 
-    <div class="form-group">
-        <label for="csvFile">Upload CSV File:</label>
-        <input type="file" id="csvFile" accept=".csv">
-        <small style="color: #666;">Make sure your CSV has a header row and numeric columns</small>
-    </div>
+    <main class="main-content">
+        <div class="dashboard">
+            <div class="card upload-section">
+                <div class="card-header">
+                    <h2><i class="fas fa-cloud-upload-alt"></i> Data Upload</h2>
+                    <div class="card-actions">
+                        <button class="btn-icon" title="Help">
+                            <i class="fas fa-question-circle"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-content">
+                            <i class="fas fa-file-csv"></i>
+                            <h3>Upload CSV File</h3>
+                            <p>Drag & drop your file here or click to browse</p>
+                            <input type="file" id="csvFile" accept=".csv" class="file-input">
+                            <label for="csvFile" class="btn-secondary">
+                                <i class="fas fa-folder-open"></i> Browse Files
+                            </label>
+                        </div>
+                    </div>
+                    <div id="fileInfo" class="file-info">
+                        <div id="fileName" class="file-name">
+                            <i class="fas fa-file"></i>
+                            <span>No file selected</span>
+                        </div>
+                        <div class="file-stats" id="fileStats"></div>
+                    </div>
 
-    <div class="form-group">
-        <label for="columnDropdown">Select Numeric Column to Sort:</label>
-        <select id="columnDropdown">
-            <option value="">-- Select a column --</option>
-        </select>
-    </div>
+                    <div class="form-group" id="columnSection" style="display: none;">
+                        <label for="columnDropdown">
+                            <i class="fas fa-columns"></i>
+                            Select Numeric Column to Sort
+                        </label>
+                        <select id="columnDropdown" class="dropdown">
+                            <option value="">-- Select a column --</option>
+                        </select>
+                        <div id="dataPreview" class="data-preview"></div>
+                    </div>
 
-    <button onclick="runAllAlgorithms()" id="sortButton">Run All Sorting Algorithms</button>
+                    <div class="action-bar">
+                        <button onclick="runAllAlgorithms()" id="sortButton" class="btn-primary" disabled>
+                            <i class="fas fa-play"></i>
+                            Analyze Performance
+                        </button>
+                        <button onclick="downloadSampleCSV()" class="btn-outline">
+                            <i class="fas fa-download"></i>
+                            Sample Dataset
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-    <div id="results"></div>
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-chart-line"></i> Performance Analysis</h2>
+                    </div>
+                    <div class="card-body">
+                        <div id="results" class="results-container">
+                            <!-- Results will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="app-footer">
+        <p>Sorting Algorithm Performance Analyzer v1.0</p>
+    </footer>
 </div>
 
 <script src="script.js"></script>
