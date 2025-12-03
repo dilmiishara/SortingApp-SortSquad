@@ -1,4 +1,3 @@
-/* Part 1: Core Styles & Layout */
 :root {
     --primary: #4361ee;
     --primary-dark: #3a56d4;
@@ -13,6 +12,7 @@
     --gray-light: #adb5bd;
     --border: #2d3041;
     --card-bg: #252836;
+    --sidebar-bg: #1f212e;
     --text: #e9ecef;
     --text-muted: #8a8d9b;
 
@@ -39,7 +39,7 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 20px;
 }
@@ -84,11 +84,19 @@ body {
 }
 
 .main-content {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 25px;
     flex: 1;
-    margin-bottom: 30px;
 }
 
 .dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.sidebar {
     display: flex;
     flex-direction: column;
     gap: 25px;
@@ -104,7 +112,7 @@ body {
 }
 
 .card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-5px);
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
 }
 
@@ -415,12 +423,217 @@ label i {
     box-shadow: 0 5px 15px rgba(230, 57, 70, 0.3);
 }
 
-.app-footer {
+.performance-chart {
+    margin-bottom: 30px;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.chart-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.chart-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.chart-bar-label {
+    width: 150px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chart-bar {
+    flex: 1;
+    height: 40px;
+    background: linear-gradient(90deg,var(--success), var(--primary));
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 15px;
+    color: white;
+    font-weight: 600;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+    min-width: 80px;
+}
+
+.chart-bar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transform: translateX(-100%);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    100% { transform: translateX(100%); }
+}
+
+.chart-bar.best {
+    background: linear-gradient(90deg, #ffea00, #ff9e00);
+    box-shadow: 0 0 20px rgba(255, 158, 0, 0.5);
+}
+
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--dark-light);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    margin-bottom: 25px;
+}
+
+.results-table th,
+.results-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+.results-table th {
+    background: var(--dark);
+    font-weight: 600;
+    color: var(--text);
+}
+
+.results-table tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.best-algorithm {
+    background: rgba(255, 158, 0, 0.1) !important;
+    border-left: 3px solid #ff9e00;
+}
+
+.best-badge {
+    background: linear-gradient(135deg, #ff9e00, #ffea00);
+    color: var(--dark);
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.success-summary {
+    background: linear-gradient(135deg, var(--success), #4895ef);
+    color: white;
+    padding: 25px;
+    border-radius: var(--border-radius);
     text-align: center;
-    padding: 20px;
-    color: var(--text-muted);
+    box-shadow: 0 5px 15px rgba(76, 201, 240, 0.3);
+}
+
+.success-summary h3 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.algorithms-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.algo-item {
+    display: flex;
+    gap: 15px;
+    padding: 15px;
+    background: var(--dark-light);
+    border-radius: 10px;
+    transition: var(--transition);
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.algo-item:hover {
+    background: rgba(67, 97, 238, 0.1);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.algo-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.algo-info {
+    flex: 1;
+}
+
+.algo-info h4 {
+    font-size: 1rem;
+    margin-bottom: 5px;
+    color: var(--text);
+}
+
+.algo-info p {
     font-size: 0.9rem;
-    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.algo-stats {
+    display: flex;
+    gap: 10px;
+}
+
+.time-complexity,
+.space-complexity {
+    font-size: 0.8rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.time-complexity {
+    background: rgba(76, 201, 240, 0.2);
+    color: var(--success);
+}
+
+.space-complexity {
+    background: rgba(114, 9, 183, 0.2);
+    color: var(--secondary);
+}
+
+@media (max-width: 1024px) {
+    .main-content {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        order: -1;
+    }
 }
 
 @media (max-width: 768px) {
@@ -439,5 +652,15 @@ label i {
 
     .action-bar {
         flex-direction: column;
+    }
+
+    .chart-bar-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .chart-bar-label {
+        width: 100%;
     }
 }
