@@ -1,4 +1,4 @@
-// Part 1: Core Functionality - File Upload & CSV Processing
+// Global variables
 let currentCSVData = null;
 let currentHeaders = [];
 let numericColumns = [];
@@ -325,25 +325,54 @@ async function runAllAlgorithms() {
         </div>
     `;
 
-    // Simulate API call for Part 1
-    setTimeout(() => {
-        // For Part 1, we'll simulate a response
-        const mockData = {
-            executionTimes: {
-                'Insertion Sort': Math.floor(Math.random() * 1000) + 100,
-                'Shell Sort': Math.floor(Math.random() * 800) + 80,
-                'Merge Sort': Math.floor(Math.random() * 600) + 60,
-                'Quick Sort': Math.floor(Math.random() * 400) + 40,
-                'Heap Sort': Math.floor(Math.random() * 500) + 50
-            },
-            bestAlgorithm: 'Quick Sort',
-            bestTime: 142
-        };
+    try {
+        console.log("Sending request for column:", selectedColumn);
 
-        displayResults(mockData);
+        const response = await fetch("http://localhost:8080/sort", {
+            method: "POST",
+            headers: {
+                "Content-Type": "text/plain"
+            },
+            body: currentCSVData + "###" + selectedColumn
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            let errorMessage = Server error (${response.status});
+            try {
+                const errorData = JSON.parse(errorText);
+                errorMessage = errorData.error || errorMessage;
+            } catch (e) {
+                errorMessage = errorText || errorMessage;
+            }
+            throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        console.log("Received data:", data);
+        displayResults(data);
+
+    } catch (error) {
+        console.error("Error:", error);
+        resultsDiv.innerHTML = `
+            <div class="error">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Analysis Failed</h3>
+                <p>${error.message}</p>
+                <button onclick="retrySort()" class="btn-primary" style="margin-top: 15px;">
+                    <i class="fas fa-redo"></i> Try Again
+                </button>
+            </div>
+        `;
+    } finally {
         button.disabled = false;
         button.innerHTML = '<i class="fas fa-play"></i> Analyze Performance';
-    }, 2000);
+    }
 }
 
 function retrySort() {
@@ -423,7 +452,7 @@ function displayResults(data) {
             <h3><i class="fas fa-trophy"></i> Best Performing Algorithm</h3>
             <p style="font-size: 1.2rem; margin-bottom: 5px;"><strong>${data.bestAlgorithm}</strong></p>
             <p style="margin-bottom: 10px;">Execution Time: ${data.bestTime} milliseconds</p>
-            <small>Note: This is a simulation. Connect to backend API for real analysis.</small>
+            <small>Results may vary based on dataset characteristics and system performance</small>
         </div>
     `;
 
@@ -455,10 +484,6 @@ Emily Davis,38,68000,89.7,10`;
     window.URL.revokeObjectURL(url);
 
     // Show success message
-    showSuccessMessage("Sample dataset downloaded successfully!");
-}
-
-function showSuccessMessage(message) {
     const toast = document.createElement('div');
     toast.className = 'success-summary';
     toast.style.cssText = `
@@ -467,8 +492,6 @@ function showSuccessMessage(message) {
         right: 20px;
         padding: 15px 20px;
         border-radius: 8px;
-        background: var(--success);
-        color: white;
         z-index: 1000;
         max-width: 300px;
         animation: slideIn 0.3s ease;
@@ -477,7 +500,7 @@ function showSuccessMessage(message) {
     toast.innerHTML = `
         <div style="display: flex; align-items: center; gap: 10px;">
             <i class="fas fa-check-circle"></i>
-            <span>${message}</span>
+            <span>Sample dataset downloaded!</span>
         </div>
     `;
 
