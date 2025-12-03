@@ -1,3 +1,10 @@
+// ====================================================================
+// CSV Sorting Algorithm Analyzer - Frontend Core Module
+// Author: [2021T01223, 2021T01258, 2021T01228 /University of Colombo,Faculty of Technology]
+// Description: Main JavaScript file for CSV upload, parsing, column
+//              detection, and simulated sorting algorithm analysis.
+// Version: 1.0.0
+// ====================================================================
 // Global variables
 let currentCSVData = null;
 let currentHeaders = [];
