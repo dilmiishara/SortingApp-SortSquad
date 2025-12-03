@@ -1,73 +1,35 @@
-// Global variables
 // ====================================================================
 // CSV Sorting Algorithm Analyzer - Frontend Core Module
-// Author: [2021t01223,2021t01228,2021t01259 /faculty of technology, university of colombo]
+// Author: [2021T01223, 2021T01258, 2021T01228 /University of Colombo,Faculty of Technology]
 // Description: Main JavaScript file for CSV upload, parsing, column
 //              detection, and simulated sorting algorithm analysis.
 // Version: 1.0.0
 // ====================================================================
-
-// ====================================================================
-// GLOBAL STATE VARIABLES
-// ====================================================================
-
-/**
- * @var {string|null} currentCSVData - Stores raw CSV content from uploaded file
- * @description Holds the entire CSV content as a string for processing
- */
+// Global variables
 let currentCSVData = null;
-
-/**
- * @var {Array<string>} currentHeaders - Stores column headers from CSV
- * @description Array containing all column names from the first row of CSV
- */
 let currentHeaders = [];
-
-/**
- * @var {Array<Object>} numericColumns - Metadata for numeric columns
- * @description Array of objects containing details about detected numeric columns
- * Each object contains: {name, sample, count, min, max}
- */
 let numericColumns = [];
 
-// ====================================================================
-// APPLICATION INITIALIZATION
-// ====================================================================
-
-/**
- * Initializes the application when DOM is fully loaded
- * @event DOMContentLoaded
- * @description Entry point - sets up upload area and event listeners
- */
+// Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     initializeUploadArea();
     initializeEventListeners();
 });
 
-// ====================================================================
-// FILE UPLOAD FUNCTIONALITY
-// ====================================================================
-
-/**
- * Sets up drag-and-drop and click-to-upload functionality
- * @description Configures upload area with visual feedback for drag operations
- */
 function initializeUploadArea() {
     const uploadArea = document.getElementById('uploadArea');
     const fileInput = document.getElementById('csvFile');
 
-    // Handle file drag over upload area
+    // Drag and drop functionality
     uploadArea.addEventListener('dragover', function(e) {
         e.preventDefault();
         uploadArea.classList.add('active');
     });
 
-    // Handle drag leave from upload area
     uploadArea.addEventListener('dragleave', function() {
         uploadArea.classList.remove('active');
     });
 
-    // Handle file drop onto upload area
     uploadArea.addEventListener('drop', function(e) {
         e.preventDefault();
         uploadArea.classList.remove('active');
@@ -78,12 +40,12 @@ function initializeUploadArea() {
         }
     });
 
-    // Handle click to open file browser
+    // Click to upload
     uploadArea.addEventListener('click', function() {
         fileInput.click();
     });
 
-    // Handle file selection via file input
+    // File input change
     fileInput.addEventListener('change', function(e) {
         if (e.target.files.length) {
             handleFileSelection(e.target.files[0]);
@@ -91,31 +53,14 @@ function initializeUploadArea() {
     });
 }
 
-// ====================================================================
-// EVENT LISTENER SETUP
-// ====================================================================
-
-/**
- * Initializes application-wide event listeners
- * @description Sets up handlers for user interactions beyond file upload
- */
 function initializeEventListeners() {
-    // Handle column selection changes
+    // Column selection change
     document.getElementById('columnDropdown').addEventListener('change', function() {
         updateDataPreview(this.value);
         document.getElementById('sortButton').disabled = !this.value;
     });
 }
 
-// ====================================================================
-// FILE PROCESSING FUNCTIONS
-// ====================================================================
-
-/**
- * Handles selected file validation and initiates processing
- * @param {File} file - The selected file object
- * @description Validates file type, updates UI, and starts file reading
- */
 function handleFileSelection(file) {
     const fileName = document.getElementById('fileName');
     const fileInfo = document.getElementById('fileInfo');
@@ -123,19 +68,19 @@ function handleFileSelection(file) {
     const uploadArea = document.getElementById('uploadArea');
 
     if (file) {
-        // Update UI with file information
+        // Update UI
         fileName.innerHTML = `<i class="fas fa-file-csv"></i><span>${file.name}</span>`;
         fileInfo.classList.add('show');
         uploadArea.classList.add('active');
 
-        // Validate file extension
+        // Validate file type
         if (!file.name.toLowerCase().endsWith('.csv')) {
             showError("Please select a CSV file!");
             resetForm();
             return;
         }
 
-        // Read file as text
+        // Read file
         const reader = new FileReader();
 
         reader.onload = function(e) {
@@ -153,16 +98,9 @@ function handleFileSelection(file) {
     }
 }
 
-/**
- * Processes CSV content, detects columns, and updates UI
- * @param {string} csvContent - Raw CSV text content
- * @param {File} file - Original file object for metadata
- * @description Parses CSV, identifies numeric columns, and populates UI components
- */
 function processCSV(csvContent, file) {
     console.log("Processing CSV file...");
 
-    // Split content into lines and filter out empty rows
     const lines = csvContent.split('\n').filter(l => l.trim() !== '');
     if (lines.length === 0) {
         showError("File is empty!");
@@ -170,7 +108,7 @@ function processCSV(csvContent, file) {
         return;
     }
 
-    // Parse headers from first line
+    // Parse headers
     currentHeaders = parseCSVLine(lines[0]);
     console.log("Headers found:", currentHeaders);
 
@@ -179,11 +117,10 @@ function processCSV(csvContent, file) {
     const fileStats = document.getElementById('fileStats');
     const sortButton = document.getElementById('sortButton');
 
-    // Reset dropdown and numeric columns array
     dropdown.innerHTML = '<option value="">-- Select a column --</option>';
     numericColumns = [];
 
-    // Parse data rows (skip header row)
+    // Parse data rows
     const dataRows = [];
     for (let i = 1; i < lines.length; i++) {
         const row = parseCSVLine(lines[i]);
@@ -194,7 +131,7 @@ function processCSV(csvContent, file) {
 
     console.log(`Found ${dataRows.length} data rows`);
 
-    // Update file statistics display
+    // Update file stats
     fileStats.innerHTML = `
         <div class="stat-item">
             <i class="fas fa-columns"></i>
@@ -210,13 +147,13 @@ function processCSV(csvContent, file) {
         </div>
     `;
 
-    // Analyze each column to identify numeric columns
+    // Find numeric columns
     currentHeaders.forEach((header, colIndex) => {
         let isNumeric = true;
         let numericValues = [];
         let hasData = false;
 
-        // Sample first 10 rows to determine column type
+        // Check first 10 rows to determine if column is numeric
         for (let i = 0; i < Math.min(dataRows.length, 10); i++) {
             const value = dataRows[i][colIndex];
             if (value && value.trim() !== '') {
@@ -231,14 +168,12 @@ function processCSV(csvContent, file) {
             }
         }
 
-        // If column is numeric and has data, add to dropdown
         if (isNumeric && hasData && numericValues.length > 0) {
             const option = document.createElement('option');
             option.value = header;
             option.textContent = header;
             dropdown.appendChild(option);
 
-            // Store column metadata
             numericColumns.push({
                 name: header,
                 sample: numericValues.slice(0, 5),
@@ -251,7 +186,6 @@ function processCSV(csvContent, file) {
         }
     });
 
-    // Validate that numeric columns were found
     if (dropdown.children.length === 1) {
         showError("No numeric columns found in this CSV file!\n\nMake sure your CSV has:\n- A header row\n- Numeric data in at least one column\n- No empty rows\n- Proper comma separation");
         console.log("No numeric columns found. Headers:", currentHeaders);
@@ -259,25 +193,15 @@ function processCSV(csvContent, file) {
         return;
     }
 
-    // Show column selection section
     columnSection.style.display = 'block';
     sortButton.disabled = true;
 
-    // Show preview for first numeric column
+    // Show data preview for first numeric column
     if (numericColumns.length > 0) {
         updateDataPreview(numericColumns[0].name);
     }
 }
 
-// ====================================================================
-// UI UPDATE FUNCTIONS
-// ====================================================================
-
-/**
- * Updates the data preview panel with column statistics
- * @param {string} columnName - Name of the selected column
- * @description Displays sample data and statistics for the selected column
- */
 function updateDataPreview(columnName) {
     const dataPreview = document.getElementById('dataPreview');
     const selectedColumn = numericColumns.find(col => col.name === columnName);
@@ -292,16 +216,7 @@ function updateDataPreview(columnName) {
     }
 }
 
-// ====================================================================
-// UTILITY FUNCTIONS
-// ====================================================================
-
-/**
- * Parses a single CSV line, handling quoted fields and commas within quotes
- * @param {string} line - A single line from CSV file
- * @returns {Array<string>} Array of parsed field values
- * @description Custom CSV parser that handles quoted fields with commas
- */
+// Helper function to parse CSV line (handles quotes and commas within fields)
 function parseCSVLine(line) {
     const result = [];
     let current = '';
@@ -324,12 +239,6 @@ function parseCSVLine(line) {
     return result;
 }
 
-/**
- * Formats file size in human-readable format
- * @param {number} bytes - File size in bytes
- * @returns {string} Formatted file size string
- * @description Converts bytes to appropriate unit (KB, MB, GB)
- */
 function formatFileSize(bytes) {
     if (bytes === 0) return '0 Bytes';
 
@@ -340,10 +249,6 @@ function formatFileSize(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-/**
- * Resets the form to initial state
- * @description Clears all inputs, selections, and resets global variables
- */
 function resetForm() {
     document.getElementById('csvFile').value = '';
     document.getElementById('fileName').innerHTML = '<i class="fas fa-file"></i><span>No file selected</span>';
@@ -357,16 +262,8 @@ function resetForm() {
     numericColumns = [];
 }
 
-// ====================================================================
-// NOTIFICATION FUNCTIONS
-// ====================================================================
-
-/**
- * Displays an error message toast notification
- * @param {string} message - Error message to display
- * @description Creates and shows a temporary error notification
- */
 function showError(message) {
+    // Create a toast notification
     const toast = document.createElement('div');
     toast.className = 'error';
     toast.style.cssText = `
@@ -392,7 +289,6 @@ function showError(message) {
 
     document.body.appendChild(toast);
 
-    // Auto-remove toast after 5 seconds
     setTimeout(() => {
         toast.style.animation = 'slideOut 0.3s ease';
         setTimeout(() => {
@@ -401,15 +297,7 @@ function showError(message) {
     }, 5000);
 }
 
-// ====================================================================
-// SORTING ALGORITHM ANALYSIS FUNCTIONS
-// ====================================================================
-
-/**
- * Main function to run simulated sorting algorithm analysis
- * @async
- * @description Simulates running multiple sorting algorithms on selected data
- */
+// Run all sorting algorithms
 async function runAllAlgorithms() {
     const fileInput = document.getElementById('csvFile');
     const columnSelect = document.getElementById('columnDropdown');
@@ -417,7 +305,6 @@ async function runAllAlgorithms() {
     const resultsSection = document.getElementById('resultsSection');
     const resultsDiv = document.getElementById('results');
 
-    // Validate inputs
     if (!fileInput.files.length || !currentCSVData) {
         showError("Please select a CSV file first!");
         return;
@@ -458,7 +345,7 @@ async function runAllAlgorithms() {
 
         if (!response.ok) {
             const errorText = await response.text();
-            let errorMessage = Server error (${response.status});
+            let errorMessage = `Server error (${response.status})`;
             try {
                 const errorData = JSON.parse(errorText);
                 errorMessage = errorData.error || errorMessage;
@@ -495,31 +382,21 @@ async function runAllAlgorithms() {
     }
 }
 
-/**
- * Retries the sorting analysis
- * @description Clears previous results and runs analysis again
- */
 function retrySort() {
     const resultsDiv = document.getElementById('results');
     resultsDiv.innerHTML = '';
     runAllAlgorithms();
 }
 
-/**
- * Displays analysis results in the UI
- * @param {Object} data - Results data containing execution times and best algorithm
- * @description Renders performance chart and results table
- */
 function displayResults(data) {
     const resultsDiv = document.getElementById('results');
     const executionTimes = data.executionTimes;
 
-    // Extract algorithm names and times for chart
+    // Create performance chart
     const algorithms = Object.keys(executionTimes);
     const times = Object.values(executionTimes);
     const maxTime = Math.max(...times);
 
-    // Build performance chart HTML
     let chartHTML = `
         <div class="performance-chart">
             <div class="chart-header">
@@ -528,7 +405,6 @@ function displayResults(data) {
             <div class="chart-bars">
     `;
 
-    // Create bar for each algorithm
     algorithms.forEach((algorithm, index) => {
         const time = times[index];
         const percentage = Math.max((time / maxTime) * 90, 10); // Minimum 10% width
@@ -549,7 +425,6 @@ function displayResults(data) {
 
     chartHTML += `</div></div>`;
 
-    // Build results table HTML
     let tableHTML = `
         ${chartHTML}
         <table class="results-table">
@@ -563,7 +438,7 @@ function displayResults(data) {
             <tbody>
     `;
 
-    // Add table rows for each algorithm
+    // Add rows for each algorithm
     Object.entries(executionTimes).forEach(([algorithm, time]) => {
         const isBest = algorithm === data.bestAlgorithm;
         const rowClass = isBest ? 'best-algorithm' : '';
@@ -577,7 +452,6 @@ function displayResults(data) {
         `;
     });
 
-    // Add summary section
     tableHTML += `
             </tbody>
         </table>
@@ -592,14 +466,7 @@ function displayResults(data) {
     resultsDiv.innerHTML = tableHTML;
 }
 
-// ====================================================================
-// SAMPLE DATA FUNCTIONALITY
-// ====================================================================
-
-/**
- * Downloads a sample CSV file for testing
- * @description Provides a pre-defined CSV dataset for demonstration
- */
+// Add sample CSV download functionality
 function downloadSampleCSV() {
     const sampleCSV = `Name,Age,Salary,Score,Experience
 John Doe,25,50000,85.5,2
@@ -613,7 +480,6 @@ Sarah Johnson,45,75000,96.5,20
 Tom Williams,27,51000,82.4,3
 Emily Davis,38,68000,89.7,10`;
 
-    // Create and trigger download
     const blob = new Blob([sampleCSV], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -647,7 +513,6 @@ Emily Davis,38,68000,89.7,10`;
 
     document.body.appendChild(toast);
 
-    // Auto-remove after 3 seconds
     setTimeout(() => {
         toast.style.animation = 'slideOut 0.3s ease';
         setTimeout(() => {
@@ -656,14 +521,7 @@ Emily Davis,38,68000,89.7,10`;
     }, 3000);
 }
 
-// ====================================================================
-// ANIMATION STYLES
-// ====================================================================
-
-/**
- * Adds CSS animations for notifications
- * @description Injects animation styles into document head
- */
+// Add CSS animations
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {
