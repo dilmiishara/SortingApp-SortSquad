@@ -57,7 +57,6 @@ function initializeEventListeners() {
     // Column selection change
     document.getElementById('columnDropdown').addEventListener('change', function() {
         updateDataPreview(this.value);
-        document.getElementById('sortButton').disabled = !this.value;
     });
 }
 
@@ -116,6 +115,7 @@ function processCSV(csvContent, file) {
     const columnSection = document.getElementById('columnSection');
     const fileStats = document.getElementById('fileStats');
     const sortButton = document.getElementById('sortButton');
+    const dataPreview = document.getElementById('dataPreview');
 
     dropdown.innerHTML = '<option value="">-- Select a column --</option>';
     numericColumns = [];
@@ -152,6 +152,7 @@ function processCSV(csvContent, file) {
         let isNumeric = true;
         let numericValues = [];
         let hasData = false;
+        let emptyCells = 0;
 
         // Check first 10 rows to determine if column is numeric
         for (let i = 0; i < Math.min(dataRows.length, 10); i++) {
@@ -165,9 +166,12 @@ function processCSV(csvContent, file) {
                 } else {
                     numericValues.push(numValue);
                 }
+            } else {
+                emptyCells++;
             }
         }
 
+        // Only add column if it has valid numeric data
         if (isNumeric && hasData && numericValues.length > 0) {
             const option = document.createElement('option');
             option.value = header;
@@ -179,10 +183,12 @@ function processCSV(csvContent, file) {
                 sample: numericValues.slice(0, 5),
                 count: dataRows.length,
                 min: Math.min(...numericValues),
-                max: Math.max(...numericValues)
+                max: Math.max(...numericValues),
+                emptyCells: emptyCells,
+                totalSamplesChecked: Math.min(dataRows.length, 10)
             });
 
-            console.log(`Found numeric column: ${header}`);
+            console.log(`Found numeric column: ${header} with ${numericValues.length} valid values`);
         }
     });
 
@@ -195,25 +201,111 @@ function processCSV(csvContent, file) {
 
     columnSection.style.display = 'block';
     sortButton.disabled = true;
+    dataPreview.style.display = 'none';
+    dataPreview.innerHTML = '';
 
     // Show data preview for first numeric column
-    if (numericColumns.length > 0) {
-        updateDataPreview(numericColumns[0].name);
-    }
+    // if (numericColumns.length > 0) {
+    //     updateDataPreview(numericColumns[0].name);
+    // }
 }
 
 function updateDataPreview(columnName) {
     const dataPreview = document.getElementById('dataPreview');
     const selectedColumn = numericColumns.find(col => col.name === columnName);
 
-    if (selectedColumn) {
-        dataPreview.innerHTML = `
-            <div><strong>Column:</strong> ${selectedColumn.name}</div>
-            <div><strong>Sample:</strong> [${selectedColumn.sample.join(', ')}...]</div>
-            <div><strong>Range:</strong> ${selectedColumn.min} to ${selectedColumn.max}</div>
-            <div><strong>Total Values:</strong> ${selectedColumn.count}</div>
-        `;
+    // Hide preview if no column is selected
+    if (!columnName || !selectedColumn) {
+        dataPreview.style.display = 'none';
+        dataPreview.innerHTML = '';
+        document.getElementById('sortButton').disabled = true;
+        return;
     }
+
+    // Show the preview container
+    dataPreview.style.display = 'block';
+
+    // Check if the selected column has valid data
+    if (!selectedColumn || selectedColumn.sample.length === 0) {
+        dataPreview.innerHTML = `
+            <div class="warning-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>No valid numeric data found in "${columnName}" column</span>
+            </div>
+        `;
+        document.getElementById('sortButton').disabled = true;
+        return;
+    }
+
+    // Check for empty/blank values in sample
+    const hasValidData = selectedColumn.sample.some(value =>
+        value !== null && value !== undefined && value !== '' && !isNaN(value)
+    );
+
+    if (!hasValidData) {
+        dataPreview.innerHTML = `
+            <div class="warning-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Selected column "${columnName}" contains only empty or non-numeric values</span>
+            </div>
+        `;
+        document.getElementById('sortButton').disabled = true;
+        return;
+    }
+
+    // Calculate statistics only from valid numeric values
+    const validValues = selectedColumn.sample.filter(value =>
+        value !== null && value !== undefined && value !== '' && !isNaN(value)
+    );
+
+    if (validValues.length === 0) {
+        dataPreview.innerHTML = `
+            <div class="warning-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>No valid numeric values found in "${columnName}"</span>
+            </div>
+        `;
+        document.getElementById('sortButton').disabled = true;
+        return;
+    }
+
+    // Calculate min and max from valid values
+    const min = Math.min(...validValues);
+    const max = Math.max(...validValues);
+
+    // Enable sort button only if we have valid data
+    document.getElementById('sortButton').disabled = false;
+
+    // Calculate empty percentage in sampled data
+    const emptyPercentage = selectedColumn.emptyCells > 0 ?
+        Math.round((selectedColumn.emptyCells / selectedColumn.totalSamplesChecked) * 100) : 0;
+
+    // Display the preview with valid data
+    dataPreview.innerHTML = `
+        <div class="preview-header">
+            <strong><i class="fas fa-columns"></i> Column:</strong> ${selectedColumn.name}
+        </div>
+        <div class="preview-sample">
+            <strong><i class="fas fa-list-ol"></i> Sample Data:</strong> 
+            <span class="sample-values">[${validValues.map(v => v.toFixed(2)).join(', ')}...]</span>
+        </div>
+        <div class="preview-stats">
+            <div class="stat-item">
+                <strong><i class="fas fa-arrows-alt-h"></i> Range:</strong> ${min.toFixed(2)} to ${max.toFixed(2)}
+            </div>
+            <div class="stat-item">
+                <strong><i class="fas fa-hashtag"></i> Total Values:</strong> ${selectedColumn.count}
+            </div>
+            <div class="stat-item">
+                <strong><i class="fas fa-chart-bar"></i> Valid Samples:</strong> ${validValues.length} of ${selectedColumn.sample.length}
+            </div>
+            ${emptyPercentage > 0 ? `
+            <div class="stat-item warning">
+                <strong><i class="fas fa-exclamation-circle"></i> Empty in sample:</strong> ${emptyPercentage}%
+            </div>
+            ` : ''}
+        </div>
+    `;
 }
 
 // Helper function to parse CSV line (handles quotes and commas within fields)
@@ -255,6 +347,8 @@ function resetForm() {
     document.getElementById('fileInfo').classList.remove('show');
     document.getElementById('uploadArea').classList.remove('active');
     document.getElementById('columnSection').style.display = 'none';
+    document.getElementById('dataPreview').style.display = 'none';
+    document.getElementById('dataPreview').innerHTML = '';
     document.getElementById('sortButton').disabled = true;
     document.getElementById('resultsSection').style.display = 'none';
     currentCSVData = null;
@@ -313,6 +407,13 @@ async function runAllAlgorithms() {
     const selectedColumn = columnSelect.value;
     if (!selectedColumn) {
         showError("Please select a numeric column to sort!");
+        return;
+    }
+
+    // Validate that the selected column has data
+    const selectedColumnData = numericColumns.find(col => col.name === selectedColumn);
+    if (!selectedColumnData || selectedColumnData.sample.length === 0) {
+        showError("The selected column has no valid data to sort!");
         return;
     }
 
@@ -521,7 +622,7 @@ Emily Davis,38,68000,89.7,10`;
     }, 3000);
 }
 
-// Add CSS animations
+// Add CSS animations and styles for data preview
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {
@@ -532,6 +633,82 @@ style.textContent = `
     @keyframes slideOut {
         from { transform: translateX(0); opacity: 1; }
         to { transform: translateX(100%); opacity: 0; }
+    }
+    
+    .data-preview {
+        margin-top: 10px;
+        padding: 12px;
+        background: var(--dark-light);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        border-left: 3px solid var(--success);
+        display: none; /* Hidden by default */
+    }
+    
+    .warning-message {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--warning);
+        padding: 8px;
+        background: rgba(247, 37, 133, 0.1);
+        border-radius: 6px;
+        border-left: 3px solid var(--warning);
+    }
+    
+    .warning-message i {
+        color: var(--warning);
+    }
+    
+    .preview-header {
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .preview-header i {
+        color: var(--success);
+    }
+    
+    .preview-sample {
+        margin-bottom: 10px;
+    }
+    
+    .sample-values {
+        font-family: 'Courier New', monospace;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin-left: 5px;
+    }
+    
+    .preview-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 8px;
+        margin-top: 10px;
+    }
+    
+    .preview-stats .stat-item {
+        padding: 6px 8px;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 4px;
+        font-size: 0.85rem;
+    }
+    
+    .preview-stats .stat-item i {
+        margin-right: 5px;
+        color: var(--success);
+    }
+    
+    .preview-stats .stat-item.warning i {
+        color: var(--warning);
+    }
+    
+    .preview-stats .stat-item.warning {
+        background: rgba(247, 37, 133, 0.1);
+        color: var(--warning);
     }
 `;
 document.head.appendChild(style);
