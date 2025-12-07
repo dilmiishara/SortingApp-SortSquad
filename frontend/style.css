@@ -233,6 +233,8 @@ body {
     background: var(--dark-light);
     border-radius: var(--border-radius);
     display: none;
+    width: fit-content;
+    margin-left: auto;
 }
 
 .file-info.show {
@@ -615,6 +617,8 @@ label i {
     border-radius: 12px;
     font-weight: 600;
 }
+
+
 
 .time-complexity {
     background: rgba(76, 201, 240, 0.2);
