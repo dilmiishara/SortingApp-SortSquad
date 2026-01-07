@@ -6,16 +6,20 @@
 // Version: 1.0.0
 // ====================================================================
 // Global variables
+// Holds CSV content as string
 let currentCSVData = null;
+// Stores CSV headers
 let currentHeaders = [];
+// Stores numeric column metadata
 let numericColumns = [];
 
-// Initialize the application
+// ---------------------- Initialization ----------------------------
 document.addEventListener('DOMContentLoaded', function() {
-    initializeUploadArea();
-    initializeEventListeners();
+    initializeUploadArea(); // Set up drag-and-drop and click upload
+    initializeEventListeners();  // Set up dropdown change listener
 });
 
+// ---------------------- Upload area setup --------------------------
 function initializeUploadArea() {
     const uploadArea = document.getElementById('uploadArea');
     const fileInput = document.getElementById('csvFile');
@@ -26,10 +30,12 @@ function initializeUploadArea() {
         uploadArea.classList.add('active');
     });
 
+    // Remove effect when leaving drag area
     uploadArea.addEventListener('dragleave', function() {
         uploadArea.classList.remove('active');
     });
 
+    // Handle dropped files
     uploadArea.addEventListener('drop', function(e) {
         e.preventDefault();
         uploadArea.classList.remove('active');
@@ -40,12 +46,12 @@ function initializeUploadArea() {
         }
     });
 
-    // Click to upload
+    // Handle click to upload
     uploadArea.addEventListener('click', function() {
         fileInput.click();
     });
 
-    // File input change
+    // Handle file selection via input
     fileInput.addEventListener('change', function(e) {
         if (e.target.files.length) {
             handleFileSelection(e.target.files[0]);
@@ -53,13 +59,15 @@ function initializeUploadArea() {
     });
 }
 
+// ---------------------- Event listeners ---------------------------
 function initializeEventListeners() {
-    // Column selection change
+    // Update preview when column selection changes
     document.getElementById('columnDropdown').addEventListener('change', function() {
         updateDataPreview(this.value);
     });
 }
 
+// ---------------------- Handle file selection ----------------------
 function handleFileSelection(file) {
     const fileName = document.getElementById('fileName');
     const fileInfo = document.getElementById('fileInfo');
@@ -67,7 +75,7 @@ function handleFileSelection(file) {
     const uploadArea = document.getElementById('uploadArea');
 
     if (file) {
-        // Update UI
+        // Update UI with selected file name
         fileName.innerHTML = `<i class="fas fa-file-csv"></i><span>${file.name}</span>`;
         fileInfo.classList.add('show');
         uploadArea.classList.add('active');
@@ -79,7 +87,7 @@ function handleFileSelection(file) {
             return;
         }
 
-        // Read file
+        // Read CSV content
         const reader = new FileReader();
 
         reader.onload = function(e) {
@@ -97,6 +105,7 @@ function handleFileSelection(file) {
     }
 }
 
+// ---------------------- CSV Processing -----------------------------
 function processCSV(csvContent, file) {
     console.log("Processing CSV file...");
 
@@ -107,7 +116,7 @@ function processCSV(csvContent, file) {
         return;
     }
 
-    // Parse headers
+    // Extract headers from first row
     currentHeaders = parseCSVLine(lines[0]);
     console.log("Headers found:", currentHeaders);
 
@@ -120,7 +129,7 @@ function processCSV(csvContent, file) {
     dropdown.innerHTML = '<option value="">-- Select a column --</option>';
     numericColumns = [];
 
-    // Parse data rows
+    // Parse data rows (skip empty rows)
     const dataRows = [];
     for (let i = 1; i < lines.length; i++) {
         const row = parseCSVLine(lines[i]);
@@ -131,7 +140,7 @@ function processCSV(csvContent, file) {
 
     console.log(`Found ${dataRows.length} data rows`);
 
-    // Update file stats
+    // Update file stats in UI
     fileStats.innerHTML = `
         <div class="stat-item">
             <i class="fas fa-columns"></i>
@@ -147,7 +156,7 @@ function processCSV(csvContent, file) {
         </div>
     `;
 
-    // Find numeric columns
+    // Detect numeric columns
     currentHeaders.forEach((header, colIndex) => {
         let isNumeric = true;
         let numericValues = [];
@@ -192,6 +201,7 @@ function processCSV(csvContent, file) {
         }
     });
 
+    // If no numeric columns found, show error
     if (dropdown.children.length === 1) {
         showError("No numeric columns found in this CSV file!\n\nMake sure your CSV has:\n- A header row\n- Numeric data in at least one column\n- No empty rows\n- Proper comma separation");
         console.log("No numeric columns found. Headers:", currentHeaders);
@@ -199,6 +209,7 @@ function processCSV(csvContent, file) {
         return;
     }
 
+    // Prepare UI for column selection
     columnSection.style.display = 'block';
     sortButton.disabled = true;
     dataPreview.style.display = 'none';
@@ -210,6 +221,7 @@ function processCSV(csvContent, file) {
     // }
 }
 
+// ---------------------- Update data preview ------------------------
 function updateDataPreview(columnName) {
     const dataPreview = document.getElementById('dataPreview');
     const selectedColumn = numericColumns.find(col => col.name === columnName);
@@ -233,6 +245,7 @@ function updateDataPreview(columnName) {
                 <span>No valid numeric data found in "${columnName}" column</span>
             </div>
         `;
+        // Enable sort button
         document.getElementById('sortButton').disabled = true;
         return;
     }
@@ -308,6 +321,7 @@ function updateDataPreview(columnName) {
     `;
 }
 
+// ---------------------- CSV Parsing Helper -------------------------
 // Helper function to parse CSV line (handles quotes and commas within fields)
 function parseCSVLine(line) {
     const result = [];
@@ -331,6 +345,8 @@ function parseCSVLine(line) {
     return result;
 }
 
+
+// ---------------------- File size formatting -----------------------
 function formatFileSize(bytes) {
     if (bytes === 0) return '0 Bytes';
 
@@ -341,6 +357,7 @@ function formatFileSize(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
+// ---------------------- Reset form -------------------------------
 function resetForm() {
     document.getElementById('csvFile').value = '';
     document.getElementById('fileName').innerHTML = '<i class="fas fa-file"></i><span>No file selected</span>';
@@ -356,6 +373,7 @@ function resetForm() {
     numericColumns = [];
 }
 
+// ---------------------- Show error messages ----------------------
 function showError(message) {
     // Create a toast notification
     const toast = document.createElement('div');

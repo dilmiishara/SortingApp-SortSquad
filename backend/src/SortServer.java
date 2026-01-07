@@ -2,27 +2,48 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+/**
+ * SortServer
+ * ----------
+ * A simple HTTP server that accepts CSV data and a column name,
+ * runs multiple sorting algorithms on the selected numeric column,
+ * measures execution time, and returns results as JSON.
+ */
+
 public class SortServer {
 
+    /**
+     * Main method – starts the server on port 8080
+     */
     public static void main(String[] args) throws Exception {
         try {
+            // Create server socket on port 8080
             ServerSocket server = new ServerSocket(8080);
             System.out.println("Server running on http://localhost:8080");
-            System.out.println("✅ Ready to accept connections...");
+            System.out.println("Ready to accept connections...");
 
+            // Continuously listen for client requests
             while (true) {
                 Socket socket = server.accept();
-                System.out.println("🔗 New client connected");
+                System.out.println("New client connected");
+
+                // Handle each client in a separate thread
                 new Thread(() -> handle(socket)).start();
             }
         } catch (IOException e) {
-            System.err.println("❌ Server error: " + e.getMessage());
+            System.err.println("Server error: " + e.getMessage());
         }
     }
 
+    /**
+     * Handles incoming HTTP requests
+     */
+
     private static void handle(Socket socket) {
         try {
+            // Input stream to read request
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            // Output stream to send response
             OutputStream out = socket.getOutputStream();
 
             String requestLine = in.readLine();
@@ -31,9 +52,9 @@ public class SortServer {
                 return;
             }
 
-            System.out.println("📨 Received: " + requestLine);
+            System.out.println("Received: " + requestLine);
 
-            // Read headers
+            // Read HTTP headers and extract Content-Length
             String line;
             int contentLength = 0;
             while ((line = in.readLine()) != null && !line.isEmpty()) {
@@ -42,7 +63,7 @@ public class SortServer {
                 }
             }
 
-            // Read body
+            // Read request body based on Content-Length
             StringBuilder bodyBuilder = new StringBuilder();
             if (contentLength > 0) {
                 char[] bodyChars = new char[contentLength];
@@ -51,11 +72,13 @@ public class SortServer {
             }
 
             String body = bodyBuilder.toString();
-            System.out.println("📦 Body received: " + body.length() + " characters");
+            System.out.println("Body received: " + body.length() + " characters");
 
+            // Route request based on path
             if (requestLine.startsWith("POST /sort")) {
                 handleSortRequest(body, out);
             } else {
+                // Default response for other routes
                 String response = "HTTP/1.1 200 OK\r\n" +
                         "Content-Type: text/plain\r\n" +
                         "Access-Control-Allow-Origin: *\r\n\r\n" +
@@ -63,19 +86,23 @@ public class SortServer {
                 out.write(response.getBytes());
             }
 
+            // Close resources
             out.close();
             in.close();
             socket.close();
 
         } catch (Exception e) {
-            System.err.println("❌ Error handling request: " + e.getMessage());
+            System.err.println("Error handling request: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
+    /**
+     * Processes CSV sorting requests
+     */
     private static void handleSortRequest(String body, OutputStream out) throws Exception {
         try {
-            // FORMAT: CSV_DATA ### COLUMN_NAME
+            // Expected format: CSV_DATA ### COLUMN_NAME
             String[] parts = body.split("###");
             if (parts.length < 2) {
                 throw new Exception("Invalid request format. Expected: CSV###COLUMN");
@@ -84,9 +111,10 @@ public class SortServer {
             String csvData = parts[0].trim();
             String columnName = parts[1].trim();
 
-            System.out.println("📊 Processing CSV data for column: " + columnName);
+            System.out.println("Processing CSV data for column: " + columnName);
             System.out.println("CSV sample: " + csvData.substring(0, Math.min(100, csvData.length())));
 
+            // Split CSV into rows
             List<String[]> rows = new ArrayList<>();
             String[] lines = csvData.split("\r\n|\n");
 
@@ -96,11 +124,12 @@ public class SortServer {
                 }
             }
 
+            // CSV must contain header + at least one data row
             if (rows.size() < 2) {
                 throw new Exception("CSV must have header and at least one data row");
             }
 
-            // Find column index
+            // Identify the index of the selected column
             String[] header = rows.get(0);
             int columnIndex = -1;
             for (int i = 0; i < header.length; i++) {
@@ -117,7 +146,7 @@ public class SortServer {
                 );
             }
 
-            // Extract numeric values
+            // Extract numeric values from selected column
             List<Double> numericData = new ArrayList<>();
             for (int i = 1; i < rows.size(); i++) {
                 if (columnIndex < rows.get(i).length) {
@@ -134,18 +163,19 @@ public class SortServer {
                 throw new Exception("No numeric data found in column: " + columnName);
             }
 
-            // Convert to array
+            // Convert numeric values to String array
             String[] originalCol = new String[numericData.size()];
             for (int i = 0; i < numericData.size(); i++) {
                 originalCol[i] = String.valueOf(numericData.get(i));
             }
 
-            System.out.println("🔢 Sorting " + originalCol.length + " numeric values");
+            System.out.println("Sorting " + originalCol.length + " numeric values");
 
-            // RUN ALL ALGORITHMS
+            // Store execution times of each algorithm
             Map<String, Long> executionTimes = new LinkedHashMap<>();
             String[] algorithms = { "Insertion Sort", "Shell Sort", "Merge Sort", "Quick Sort", "Heap Sort" };
 
+            // Run all sorting algorithms
             for (String algo : algorithms) {
                 String[] arr = Arrays.copyOf(originalCol, originalCol.length);
                 long start = System.nanoTime();
@@ -162,14 +192,14 @@ public class SortServer {
                 executionTimes.put(algo, (end - start) / 1_000_000);
             }
 
-            // FIND BEST
+            // Determine fastest algorithm
             String bestAlgorithm = Collections.min(
                     executionTimes.entrySet(),
                     Map.Entry.comparingByValue()
             ).getKey();
             long bestTime = executionTimes.get(bestAlgorithm);
 
-            // BUILD JSON
+            // Build JSON response manually
             StringBuilder json = new StringBuilder("{");
             json.append("\"executionTimes\": {");
 
@@ -184,7 +214,7 @@ public class SortServer {
             json.append("\"bestTime\": ").append(bestTime);
             json.append("}");
 
-            // SEND RESPONSE
+            // Send HTTP response
             String response =
                     "HTTP/1.1 200 OK\r\n" +
                             "Content-Type: application/json\r\n" +
@@ -193,10 +223,11 @@ public class SortServer {
                             json;
 
             out.write(response.getBytes());
-            System.out.println("✅ Response sent successfully");
+            System.out.println("Response sent successfully");
 
         } catch (Exception e) {
-            System.err.println("❌ Error: " + e.getMessage());
+            // Send error response as JSON
+            System.err.println("Error: " + e.getMessage());
             String errorJson = "{\"error\": \"" + e.getMessage().replace("\"", "\\\"") + "\"}";
             String errorResponse =
                     "HTTP/1.1 500 Internal Server Error\r\n" +
@@ -209,7 +240,9 @@ public class SortServer {
         }
     }
 
-    // SORTING ALGORITHMS
+    /* ===================== SORTING ALGORITHMS ===================== */
+
+    // Insertion Sort
     static void insertionSort(String[] arr) {
         for (int i = 1; i < arr.length; i++) {
             String key = arr[i];
@@ -222,6 +255,7 @@ public class SortServer {
         }
     }
 
+    // Shell Sort
     static void shellSort(String[] arr) {
         int n = arr.length;
         for (int gap = n / 2; gap > 0; gap /= 2) {
@@ -237,6 +271,7 @@ public class SortServer {
         }
     }
 
+    // Merge Sort
     static void mergeSort(String[] arr) {
         String[] temp = new String[arr.length];
         mergeSortHelper(arr, temp, 0, arr.length - 1);
@@ -264,6 +299,7 @@ public class SortServer {
         while (j <= right) arr[k++] = temp[j++];
     }
 
+    // Quick Sort
     static void quickSort(String[] arr, int low, int high) {
         if (low < high) {
             int pi = partition(arr, low, high);
@@ -284,7 +320,6 @@ public class SortServer {
                 arr[j] = temp;
             }
         }
-
         String temp = arr[i + 1];
         arr[i + 1] = arr[high];
         arr[high] = temp;
@@ -292,6 +327,7 @@ public class SortServer {
         return i + 1;
     }
 
+    // Heap Sort
     static void heapSort(String[] arr) {
         int n = arr.length;
 
