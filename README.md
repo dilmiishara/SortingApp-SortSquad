@@ -82,6 +82,7 @@ project-root/
 │
 ├── frontend/
 │   ├── index.html          # Main GUI (HTML5 structure)
+│   ├── style.css           # Styling for the dashboard, tables, and charts
 │   └── main.js             # Core JS: CSV parsing, API requests, and UI logic
 │
 ├── README.md               # Project documentation
