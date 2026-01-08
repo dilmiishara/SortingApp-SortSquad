@@ -17,8 +17,6 @@ The project allows users to:
 - Evaluate **performance** using execution time  
 - Identify the **best-performing algorithm**  
 
-The assignment also includes a **recorded presentation** where each member explains their contribution and demonstrates the application.
-
 ---
 
 ## 🎯 Objective
@@ -85,6 +83,12 @@ project-root/
 │   ├── style.css           # Styling for the dashboard, tables, and charts
 │   └── main.js             # Core JS: CSV parsing, API requests, and UI logic
 │
+├── assets/                 # Folder containing project screenshots
+│   ├── file_selection.png
+│   ├── column_selection.png
+│   ├── analysis_results.png
+│   └── best_algorithm.png
+|
 ├── README.md               # Project documentation
 └── sample-dataset.csv      # Sample CSV for immediate testing
 ```
@@ -133,7 +137,7 @@ project-root/
 | Member | Tasks |
 | :--- | :--- |
 | **Member 1 (2021t01258)** | CSV parsing & column extraction, Backend request handling, Merge Sort implementation, Execution time API completion. |
-| **Member 2 (2021t01223)** | Heap Sort implementation, Shell Sort implementation, Frontend (basic structure & core functionality), Testing Part 2. |
+| **Member 2 (2021t01223)** | Heap Sort implementation, Shell Sort implementation, Frontend (basic structure & core functionality), Testing Part 1. |
 | **Member 3  (2021t01228)** | Quick Sort implementation, Insertion Sort implementation, Frontend (advanced features & enhancements), Testing Part 2. |
 | **Common Tasks** | Final bug fixes, documentation, error handling, and presentation prep. |
 
@@ -166,7 +170,6 @@ project-root/
 ## 📌 Notes
 * **Column Selection:** Always ensure you select **numeric columns** for sorting to avoid calculation errors.
 * **Input Validation:** The system is designed to handle invalid data and empty CSV inputs gracefully.
-* **Mandatory Presentation:** A recorded presentation is **required** to demonstrate and verify individual code contributions.
 
 ---
 
